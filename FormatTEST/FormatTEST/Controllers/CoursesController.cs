@@ -18,25 +18,6 @@ public class CoursesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> getCourses([FromQuery] bool activeOnly = true)
     {
-        var query = _context.Courses.AsNoTracking();
-
-
-        if (activeOnly)
-        {
-            query = query.Where(c =>  c.IsActive);
-        }
-
-
-        var courses = await query.Select(c => new CourseDto()
-        {
-            CourseId = c.CourseId,
-            Code = c.Code,
-            Name = c.Name,
-            Credits = c.Credits,
-            AssignmentCount =  c.Assignments.Count
-        }).ToListAsync();
-        return Ok(courses);
-        
         
     }
 
