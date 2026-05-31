@@ -1,56 +1,46 @@
 using FormatTEST.Data;
 using FormatTEST.DTOs;
+using FormatTEST.Services;
+using Kolokwium.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace FormatTEST.Controllers;
 
+
+[ApiController]
+[Route("api/[controller]")]
+
 public class CoursesController : ControllerBase
 {
-    private readonly UniversityTasksDbContext _context;
-
-    public CoursesController(UniversityTasksDbContext context)
+    private readonly IDbService _db;
+    public CoursesController(IDbService db)
     {
-        _context = context;
+        _db = db;
     }
-
 
     [HttpGet]
-    public async Task<IActionResult> getCourses([FromQuery] bool activeOnly = true)
+    public async Task<ActionResult> GetCourses([FromQuery] bool activeOnly = true)
     {
-        
+        var courses = await _db.GetCoursesAsync(activeOnly);
+        return Ok(courses);
     }
 
-    [HttpGet("{idCourse}/assignments")]
-
-    public async Task<IActionResult> GetCourseAssignments(int idCourse, [FromQuery] bool publishedOnly = true)
+    [HttpGet("{idCours}/assigments")]
+    public async Task<IActionResult> GetCoursesAssigmentsAsync(int idCourse, [FromQuery] bool publishedOnly = true)
     {
-
-
-        var courseExists = await _context.Courses.AnyAsync(c => c.CourseId == idCourse);
-
-        if (!courseExists)
+        try
         {
-            return NotFound("Course not found");
+            var assigments = await _db.GetCourseAssignmentsAsync(idCourse, publishedOnly);
+            return Ok(assigments);
+        }
+        catch (NotFoundException e)
+        {
+            return NotFound(e.Message);
         }
         
-        var query = _context.Assignments.AsNoTracking().Where(a => a.CourseId == idCourse);
-
-        if (publishedOnly)
-        {
-            query = query.Where(a => a.IsPublished);
-        }
-        
-        var assigments = await query.Select(a => new AssignmentDto()
-        {
-            AssignmentId =  a.AssignmentId,
-            Title =  a.Title,
-            DueDate =  a.DueDate,
-            MaxPoints =  a.MaxPoints,
-            IsPublished =  a.IsPublished,
-            SubmissionCount =  a.Submissions.Count
-        }).ToListAsync();
-        return Ok(assigments);
     }
+    
+    
     
 }
